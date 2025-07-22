@@ -2,121 +2,87 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ReportGuru</title>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f0f6ff;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      background-color: #0078d7;
-      color: white;
+      background: #f5f7fa;
+      color: #333;
+      text-align: center;
       padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
     }
-
-    header img {
-      height: 50px;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 1.8rem;
-    }
-
     .container {
-      max-width: 800px;
-      margin: 40px auto;
+      max-width: 600px;
+      margin: auto;
+      background: white;
       padding: 20px;
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
-
-    label {
-      font-weight: 600;
-    }
-
     input[type="file"] {
       margin-top: 10px;
+      padding: 10px;
     }
-
-    #preview {
-      margin-top: 20px;
-      max-width: 100%;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    #loading {
-      margin-top: 20px;
-      font-weight: bold;
-      color: #0078d7;
-    }
-
     #output {
       margin-top: 20px;
-      white-space: pre-wrap;
+      background: #eee;
       padding: 15px;
-      background-color: #f9f9f9;
-      border-left: 4px solid #0078d7;
-      border-radius: 5px;
+      border-radius: 8px;
+      text-align: left;
+      white-space: pre-wrap;
+    }
+    img.logo {
+      width: 120px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-
-  <header>
-    <img src="https://img.icons8.com/ios-filled/100/stethoscope.png" alt="Logo" />
-    <h1>ReportGuru</h1>
-  </header>
-
   <div class="container">
-    <label for="fileInput">📄 Upload a Medical Report (Image):</label><br>
-    <input type="file" id="fileInput" accept="image/*">
+    <img src="https://i.imgur.com/rl1hYXt.png" alt="ReportGuru Logo" class="logo">
+    <h2>Welcome to <span style="color: #0066cc;">ReportGuru</span></h2>
+    <p>Upload your medical report (JPG, PNG, or PDF)</p>
 
-    <img id="preview" src="" alt="Preview will appear here.">
-    <p id="loading"></p>
+    <input type="file" id="imageUpload" accept="image/*,application/pdf" onchange="handleUpload(event)">
+
     <div id="output"></div>
   </div>
 
+  <!-- OCR Script -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.3/dist/tesseract.min.js"></script>
   <script>
-    const fileInput = document.getElementById('fileInput');
-    const preview = document.getElementById('preview');
-    const output = document.getElementById('output');
-    const loading = document.getElementById('loading');
+    function handleUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          preview.src = reader.result;
-          loading.textContent = '🧠 Reading report... please wait';
-          output.textContent = '';
+      const output = document.getElementById("output");
+      output.innerHTML = "⏳ Processing... Please wait...";
+
+      if (file.type === 'application/pdf') {
+        output.innerHTML = "⚠️ PDF support coming soon!";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.src = e.target.result;
+
+        img.onload = function() {
           Tesseract.recognize(
-            reader.result,
+            img,
             'eng',
-            { logger: m => console.log(m) }
+            {
+              logger: m => console.log(m)
+            }
           ).then(({ data: { text } }) => {
-            loading.textContent = '✅ Text Extracted';
-            output.textContent = text;
-          }).catch(err => {
-            loading.textContent = '❌ Failed to read image';
-            output.textContent = err.message;
+            output.innerHTML = "📄 Extracted Text:<br><br>" + text.replace(/\n/g, "<br>");
           });
         };
-        reader.readAsDataURL(file);
-      }
-    });
+      };
+      reader.readAsDataURL(file);
+    }
   </script>
-
 </body>
 </html>
